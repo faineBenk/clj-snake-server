@@ -1,0 +1,5 @@
+CREATE TABLE players (
+ id INT PRIMARY KEY,
+ player VARCHAR(16) NOT NULL,
+ score INT NOT NULL
+);

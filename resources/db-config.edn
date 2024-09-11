@@ -1,0 +1,6 @@
+{:dbtype "postgresql"
+ :dbname "snake_db"
+ :host "localhost"
+ :port 5432
+ :user "shdvv"
+ :password "shdvv"}
