@@ -1,1 +1,1 @@
-DROP TABLE players IF EXISTS;
+DROP TABLE IF EXISTS players;

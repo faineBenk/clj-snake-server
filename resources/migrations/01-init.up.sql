@@ -1,5 +1,6 @@
 CREATE TABLE players (
- id INT PRIMARY KEY,
+ id SERIAL PRIMARY KEY,
  player VARCHAR(16) NOT NULL,
  score INT NOT NULL
 );
+

@@ -3,7 +3,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [db.config :as config]
-            [db.migrations :refer [migrate]]))
+            [db.migrations :refer [migrate rollback rollback-all]]))
 
 (def datasource (atom nil))
 
@@ -24,12 +24,19 @@
 
 (defn set-user-score [player score]
   (let [id (inc (:max (first (get-last-id))))]
-  (jdbc/execute! @datasource ["INSERT INTO players (id,player,score) VALUES (?,?,?)" id player score])))
+    (try
+      (jdbc/execute! @datasource ["INSERT INTO players (player,score) VALUES (?,?)" player score])
+      (println (str player " added to snake-db."))
+      (catch Exception e
+        (println (str player " already exists."))))))
 
 (defn sort-players-by-score []
   (jdbc/execute! @datasource ["SELECT * FROM players ORDER BY score [DESC]"]))
 
 (defn -main []
+  ;(rollback-all)
+  (migrate)
   (migrate)
   (connect)
   (println "Database started."))
+
