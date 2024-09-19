@@ -3,7 +3,8 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [db.config :as config]
-            [db.migrations :refer [migrate rollback rollback-all]]))
+            [db.migrations :refer [migrate rollback migrate-all rollback-all]]
+            [cheshire.core :as json]))
 
 (def datasource (atom nil))
 
@@ -16,27 +17,35 @@
     (reset! datasource nil)
     (println "Database disconnected.")))
 
-(defn get-user-id [player]
-   (jdbc/execute! @datasource ["SELECT id FROM players WHERE player=" player]))
+(defn get-user-score [player]
+   (jdbc/execute! @datasource ["SELECT score FROM players WHERE player = ?" player]))
 
 (defn get-last-id []
  (jdbc/execute! @datasource ["SELECT MAX(id) FROM players"]))
 
-(defn set-user-score [player score]
-  (let [id (inc (:max (first (get-last-id))))]
+(defn set-user-score [player new-score]
     (try
-      (jdbc/execute! @datasource ["INSERT INTO players (player,score) VALUES (?,?)" player score])
+      (jdbc/execute! @datasource ["INSERT INTO players (player,score) VALUES (?,?)" player new-score])
       (println (str player " added to snake-db."))
+      :added
       (catch Exception e
-        (println (str player " already exists."))))))
+        (do
+          (println (str player " already exists."))
+          (let [old-score (:players/score (first (get-user-score player)))]
+          ;; update score of existing player only if new-score > latest score
+          (if (> new-score  old-score)
+            (do
+              (jdbc/execute! @datasource [ "UPDATE players SET score = ? WHERE player = ?" new-score player])
+              :updated)
+            :not-updated))))))
 
-(defn sort-players-by-score []
-  (jdbc/execute! @datasource ["SELECT * FROM players ORDER BY score [DESC]"]))
+
+(defn select-sorted-players-by-score []
+  (jdbc/execute! @datasource ["SELECT * FROM players ORDER BY score DESC LIMIT 5"]))
 
 (defn -main []
   ;(rollback-all)
-  (migrate)
-  (migrate)
+  ;(migrate-all)
   (connect)
   (println "Database started."))
 

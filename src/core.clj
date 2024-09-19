@@ -6,9 +6,6 @@
             [cheshire.core :as json])
   (:import [java.io InputStreamReader BufferedReader]))
 
-;; stores players' scores, sorted by maximum score
-(def rating-table)
-
 (defn parse-body-as-json [body-stream]
   (-> body-stream
       InputStreamReader.
@@ -19,7 +16,9 @@
 (defn score-handler [req]
    (let [player-name (-> req :params :player-name)
          body (parse-body-as-json (:body req))
-         score (get body "score")]
+         score (get body "score")
+         result (db/set-user-score player-name score)
+         msg {:status result}]
          ;; id (db/get-user-id player-name)]
      (println "Full request:")
      (println req)
@@ -27,19 +26,15 @@
      (println body)
      (println "This is score:")
      (println score)
-     (db/set-user-score player-name score)))
+     (json/generate-string msg)))
 
-;; (db/set-user-score  "shdvv" 10)
-
-(defn update-rating-table [rating-table]
-  (db/sort-players-by-score))
+(defn get-rating-table [req]
+  (println req)
+  (json/generate-string (db/select-sorted-players-by-score)))
 
 (defroutes all-routes
-  (POST "/set-score/:player-name" [:as req] (score-handler req)))
-  ;; (httpkit/GET "/get-user-id/"
-  ;;              (compojure/response (compojure/context ":player" [player] player-name-handler))))
-  ;;(httpkit/POST "/set-score"
-  ;;              (compojure/context "/user/:id" [id] score-handler)))
+  (POST "/set-score/:player-name" [:as req] (score-handler req))
+  (GET "/rating-table" [] get-rating-table))
 
 (defn -main []
   (println "Server started on localhost:8080")

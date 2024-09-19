@@ -18,15 +18,17 @@
 (defn rollback []
   (migratus/rollback (migratus-config config/db-config)))
 
-(defn map-to-SQLMigration [item]
-  )
+(defn get-only-ups [migrations]
+  (let [len (int (/ (count migrations) 2))]
+    (take len migrations)))
 
 (defn migrate-all []
-  (let [all-migrations (map map-to-SQLMigration (mgs/find-migration-files
+  (let [all-migrations (get-only-ups (mgs/find-migration-files
                                                  (java.io.File. "/home/shdvv/clojure-projects/snake-server/resources/migrations/") nil))]
-    (when (seq all-migrations)
-      (migratus/rollback migratus-config)
-      (recur))))
+   (loop [a all-migrations]
+    (when (seq a)
+      (migratus/migrate migratus-config)
+      (recur (rest a))))))
 
 (defn rollback-all []
   (let [applied-migrations (mgs/list-migrations migratus-config)]
